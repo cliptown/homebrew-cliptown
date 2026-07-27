@@ -1,0 +1,40 @@
+name: Homebrew Tap CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject floating and unverifiable sources
+        shell: bash
+        run: |
+          if find Formula Casks -type f \( -name '*.rb' \) -print 2>/dev/null | grep -q .; then
+            if grep -RInE 'url .*\b(latest|main|master|HEAD)\b|sha256[[:space:]]+["'"']?(skip|no_check)' Formula Casks 2>/dev/null; then
+              echo 'formulae and casks must use immutable URLs and verified checksums' >&2
+              exit 1
+            fi
+          fi
+      - name: Audit formulae and casks when present
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(Formula/*.rb Casks/*.rb)
+          if (( ${#files[@]} == 0 )); then
+            echo 'No release formula or cask published yet.'
+            exit 0
+          fi
+          brew tap cliptown/cliptown "$PWD"
+          brew style "${files[@]}"
+          for file in "${files[@]}"; do
+            name=$(basename "$file" .rb)
+            brew audit --strict --new "cliptown/cliptown/$name"
+          done
