@@ -17,11 +17,18 @@ jobs:
       - name: Reject floating and unverifiable sources
         shell: bash
         run: |
-          if find Formula Casks -type f \( -name '*.rb' \) -print 2>/dev/null | grep -q .; then
-            if grep -RInE 'url .*\b(latest|main|master|HEAD)\b|sha256[[:space:]]+["'"']?(skip|no_check)' Formula Casks 2>/dev/null; then
-              echo 'formulae and casks must use immutable URLs and verified checksums' >&2
-              exit 1
-            fi
+          files=$(find Formula Casks -type f -name '*.rb' -print 2>/dev/null || true)
+          if [[ -z "$files" ]]; then
+            echo 'No formula or cask published yet.'
+            exit 0
+          fi
+          if grep -RInE 'url .*(latest|/main/|/master/|/HEAD/)' Formula Casks; then
+            echo 'formulae and casks must use immutable release URLs' >&2
+            exit 1
+          fi
+          if grep -RInE 'sha256.*(skip|no_check)' Formula Casks; then
+            echo 'formulae and casks must use verified checksums' >&2
+            exit 1
           fi
       - name: Audit formulae and casks when present
         shell: bash
