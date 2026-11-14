@@ -30,6 +30,20 @@ jobs:
             echo 'formulae and casks must use verified checksums' >&2
             exit 1
           fi
+      - name: Verify local checksum preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive=$(mktemp)
+          trap 'rm -f "$archive"' EXIT
+          printf 'cliptown-tap-test' > "$archive"
+          expected=$(shasum -a 256 "$archive")
+          expected=${expected%% *}
+          bash scripts/verify-release-checksum.sh "$archive" "$expected"
+          if bash scripts/verify-release-checksum.sh "$archive" "0000000000000000000000000000000000000000000000000000000000000000"; then
+            echo 'bad checksum was accepted' >&2
+            exit 1
+          fi
       - name: Audit formulae and casks when present
         shell: bash
         run: |
