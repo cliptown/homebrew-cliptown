@@ -8,8 +8,8 @@ fi
 
 archive=$1
 expected=$2
-if [[ ! -f "$archive" || ! -s "$archive" ]]; then
-  echo "release archive must exist and be nonempty" >&2
+if [[ -L "$archive" || ! -f "$archive" || ! -s "$archive" ]]; then
+  echo "release archive must be a regular nonempty file, not a symlink" >&2
   exit 2
 fi
 if [[ ! "$expected" =~ ^[0-9a-f]{64}$ ]]; then
