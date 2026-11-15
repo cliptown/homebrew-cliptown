@@ -44,6 +44,14 @@ jobs:
             echo 'bad checksum was accepted' >&2
             exit 1
           fi
+          link=$(mktemp)
+          rm -f "$link"
+          ln -s "$archive" "$link"
+          if bash scripts/verify-release-checksum.sh "$link" "$expected"; then
+            echo 'symlink release archive was accepted' >&2
+            exit 1
+          fi
+          rm -f "$link"
       - name: Audit formulae and casks when present
         shell: bash
         run: |
